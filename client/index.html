@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="fr">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Video Subtitle Translator</title>
+        <link rel="stylesheet" href="./style.css" />
+    </head>
+    <body>
+        <div class="container">
+            <header class="header">
+                <h1>🎬 Video Subtitle Translator</h1>
+                <p>Convertissez vos vidéos VO en VOSTFR automatiquement</p>
+            </header>
+
+            <main class="main-content">
+                <!-- Section Upload -->
+                <div class="upload-section" id="uploadSection">
+                    <div class="upload-icon">📁</div>
+                    <h3>Glissez-déposez votre vidéo ici</h3>
+                    <p style="margin: 15px 0; color: #6c757d">ou</p>
+                    <button
+                        class="upload-btn"
+                        onclick="document.getElementById('fileInput').click()"
+                    >
+                        Choisir un fichier
+                    </button>
+                    <input
+                        type="file"
+                        id="fileInput"
+                        class="file-input"
+                        accept=".mp4,.avi,.mov,.mkv"
+                    />
+                    <p
+                        style="
+                            margin-top: 15px;
+                            font-size: 0.9rem;
+                            color: #6c757d;
+                        "
+                    >
+                        Formats supportés: MP4, AVI, MOV, MKV
+                    </p>
+                </div>
+
+                <!-- Info fichier -->
+                <div class="file-info" id="fileInfo">
+                    <h3>📄 Informations du fichier</h3>
+                    <div id="fileDetails"></div>
+                </div>
+
+                <!-- Sélecteur de langues -->
+                <div class="language-selector">
+                    <div class="lang-group">
+                        <label for="sourceLang">Langue source</label>
+                        <select id="sourceLang">
+                            <option value="en">🇺🇸 Anglais</option>
+                            <option value="es">🇪🇸 Espagnol</option>
+                            <option value="de">🇩🇪 Allemand</option>
+                            <option value="it">🇮🇹 Italien</option>
+                            <option value="pt">🇵🇹 Portugais</option>
+                            <option value="zh">🇨🇳 Chinois</option>
+                            <option value="ja">🇯🇵 Japonais</option>
+                            <option value="ko">🇰🇷 Coréen</option>
+                        </select>
+                    </div>
+                    <div class="arrow">→</div>
+                    <div class="lang-group">
+                        <label for="targetLang">Langue cible</label>
+                        <select id="targetLang">
+                            <option value="fr">🇫🇷 Français</option>
+                            <option value="en">🇺🇸 Anglais</option>
+                            <option value="es">🇪🇸 Espagnol</option>
+                            <option value="de">🇩🇪 Allemand</option>
+                            <option value="it">🇮🇹 Italien</option>
+                            <option value="pt">🇵🇹 Portugais</option>
+                            <option value="zh">🇨🇳 Chinois</option>
+                            <option value="ja">🇯🇵 Japonais</option>
+                            <option value="ko">🇰🇷 Coréen</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button class="process-btn" id="processBtn" disabled>
+                    🚀 Lancer la traduction
+                </button>
+
+                <!-- Section progression -->
+                <div class="progress-section" id="progressSection">
+                    <h3>📊 Progression du traitement</h3>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="progressBar"></div>
+                    </div>
+                    <div class="progress-text" id="progressText">
+                        Initialisation...
+                    </div>
+
+                    <div id="statusList">
+                        <div class="status-item" id="uploadStatus">
+                            <span class="status-icon">⏳</span>
+                            <span>Upload du fichier</span>
+                        </div>
+                        <div class="status-item" id="extractStatus">
+                            <span class="status-icon">⏳</span>
+                            <span>Extraction de l'audio</span>
+                        </div>
+                        <div class="status-item" id="transcribeStatus">
+                            <span class="status-icon">⏳</span>
+                            <span>Transcription avec Whisper</span>
+                        </div>
+                        <div class="status-item" id="translateStatus">
+                            <span class="status-icon">⏳</span>
+                            <span>Traduction des segments</span>
+                        </div>
+                        <div class="status-item" id="generateStatus">
+                            <span class="status-icon">⏳</span>
+                            <span>Génération des sous-titres</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section résultats -->
+                <div class="results-section" id="resultsSection">
+                    <h3>✅ Traduction terminée!</h3>
+                    <p>Vos sous-titres ont été générés avec succès.</p>
+                    <div style="margin-top: 20px">
+                        <a href="#" class="download-btn" id="downloadBtn">
+                            📥 Télécharger les sous-titres (.srt)
+                        </a>
+                        <button
+                            class="download-btn"
+                            onclick="location.reload()"
+                            style="
+                                background: linear-gradient(
+                                    135deg,
+                                    #6c757d 0%,
+                                    #5a6268 100%
+                                );
+                            "
+                        >
+                            🔄 Nouvelle traduction
+                        </button>
+                    </div>
+
+                    <div class="subtitle-preview" id="subtitlePreview">
+                        <h4>📝 Aperçu des sous-titres</h4>
+                        <div id="subtitleContent"></div>
+                    </div>
+                </div>
+
+                <!-- Section erreur -->
+                <div class="error-section" id="errorSection">
+                    <h3>❌ Erreur</h3>
+                    <p id="errorMessage"></p>
+                    <button
+                        class="download-btn"
+                        onclick="location.reload()"
+                        style="
+                            background: linear-gradient(
+                                135deg,
+                                #dc3545 0%,
+                                #c82333 100%
+                            );
+                            margin-top: 15px;
+                        "
+                    >
+                        🔄 Réessayer
+                    </button>
+                </div>
+            </main>
+        </div>
+
+        <script src="./script.js"></script>
+    </body>
+</html>
