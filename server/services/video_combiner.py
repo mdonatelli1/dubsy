@@ -61,7 +61,7 @@ class VideoCombinerService:
                 "-y",  # Overwrite
             ]
 
-            print("⚙️ Commande FFmpeg:", " ".join(cmd))
+            print("⚙ Commande FFmpeg:", " ".join(cmd))
 
             # Exécuter FFmpeg
             result = subprocess.run(
@@ -144,6 +144,6 @@ class VideoCombinerService:
         try:
             if os.path.exists(video_path):
                 os.remove(video_path)
-                print(f"🗑️ Vidéo supprimée: {video_path}")
+                print(f"🗑 Vidéo supprimée: {video_path}")
         except Exception as e:
-            print(f"⚠️ Erreur lors du nettoyage vidéo: {e}")
+            print(f"⚠ Erreur lors du nettoyage vidéo: {e}")

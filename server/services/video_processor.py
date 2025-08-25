@@ -128,6 +128,6 @@ class VideoProcessor:
         try:
             if os.path.exists(file_path):
                 os.remove(file_path)
-                print(f"🗑️ Fichier supprimé: {file_path}")
+                print(f"🗑 Fichier supprimé: {file_path}")
         except Exception as e:
-            print(f"⚠️ Erreur lors du nettoyage de {file_path}: {e}")
+            print(f"⚠ Erreur lors du nettoyage de {file_path}: {e}")

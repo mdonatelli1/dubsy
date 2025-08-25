@@ -51,7 +51,7 @@ async def main():
 
         print("✅ Traduction terminée!")
         print(f"📁 Fichier SRT créé: {result['srt_file']}")
-        print(f"🎞️ Vidéo sortie: {result['video_with_subtitles']}")
+        print(f"🎞 Vidéo sortie: {result['video_with_subtitles']}")
         print(f"📊 Nombre de segments: {result['segments_count']}")
 
     except Exception as e:
