@@ -53,6 +53,7 @@
                     <div class="lang-group">
                         <label for="sourceLang">Langue source</label>
                         <select id="sourceLang">
+                            <option value="fr">🇫🇷 Français</option>
                             <option value="en">🇺🇸 Anglais</option>
                             <option value="es">🇪🇸 Espagnol</option>
                             <option value="de">🇩🇪 Allemand</option>
@@ -115,16 +116,36 @@
                             <span class="status-icon">⏳</span>
                             <span>Génération des sous-titres</span>
                         </div>
+                        <div class="status-item" id="combineStatus">
+                            <span class="status-icon">⏳</span>
+                            <span>Intégration à la vidéo</span>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Section résultats -->
                 <div class="results-section" id="resultsSection">
                     <h3>✅ Traduction terminée!</h3>
-                    <p>Vos sous-titres ont été générés avec succès.</p>
+                    <p>
+                        Votre vidéo avec sous-titres a été générée avec succès.
+                    </p>
                     <div style="margin-top: 20px">
-                        <a href="#" class="download-btn" id="downloadBtn">
-                            📥 Télécharger les sous-titres (.srt)
+                        <a href="#" class="download-btn" id="downloadVideoBtn">
+                            📥 Télécharger la vidéo avec sous-titres
+                        </a>
+                        <a
+                            href="#"
+                            class="download-btn"
+                            id="downloadSrtBtn"
+                            style="
+                                background: linear-gradient(
+                                    135deg,
+                                    #6f42c1 0%,
+                                    #5a32a3 100%
+                                );
+                            "
+                        >
+                            📄 Télécharger les sous-titres (.srt)
                         </a>
                         <button
                             class="download-btn"
@@ -139,11 +160,6 @@
                         >
                             🔄 Nouvelle traduction
                         </button>
-                    </div>
-
-                    <div class="subtitle-preview" id="subtitlePreview">
-                        <h4>📝 Aperçu des sous-titres</h4>
-                        <div id="subtitleContent"></div>
                     </div>
                 </div>
 

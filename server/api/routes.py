@@ -21,8 +21,9 @@ async def upload_and_translate(
     file: UploadFile = File(...),
     source_lang: str = Form(settings.DEFAULT_SOURCE_LANG),
     target_lang: str = Form(settings.DEFAULT_TARGET_LANG),
+    subtitle_type: str = Form("hard"),  # "hard" ou "soft"
 ):
-    """Endpoint pour uploader une vidéo et générer des sous-titres traduits"""
+    """Endpoint pour uploader une vidéo et générer une vidéo avec sous-titres"""
 
     temp_video_path = None
 
@@ -40,6 +41,10 @@ async def upload_and_translate(
             raise HTTPException(
                 status_code=400, detail=f"Code de langue cible invalide: {target_lang}"
             )
+
+        # Validation du type de sous-titres
+        if subtitle_type not in ["hard", "soft"]:
+            subtitle_type = "hard"
 
         # Sauvegarder le fichier temporairement
         safe_filename = sanitize_filename(file.filename)
@@ -59,15 +64,17 @@ async def upload_and_translate(
         with open(temp_video_path, "wb") as buffer:
             buffer.write(content)
 
-        # Traiter la vidéo
+        # Traiter la vidéo (pipeline complet)
         result = await video_processor.process_video(
-            temp_video_path, source_lang, target_lang
+            temp_video_path, source_lang, target_lang, subtitle_type
         )
 
         return {
-            "message": "Traduction terminée avec succès",
+            "message": "Traduction et intégration terminées avec succès",
             "srt_file_path": result["srt_file"],
+            "video_with_subtitles": result["video_with_subtitles"],
             "segments_count": result["segments_count"],
+            "subtitle_type": result["subtitle_type"],
             "status": result["status"],
         }
 
@@ -79,20 +86,31 @@ async def upload_and_translate(
         raise HTTPException(status_code=500, detail=f"Erreur interne: {str(e)}")
 
     finally:
-        # Nettoyage
+        # Nettoyage du fichier d'entrée
         if temp_video_path and os.path.exists(temp_video_path):
             video_processor.cleanup_temp_file(temp_video_path)
+
+
+@router.get("/download-video/{filename}")
+async def download_video(filename: str):
+    """Endpoint pour télécharger la vidéo avec sous-titres"""
+    safe_filename = sanitize_filename(filename)
+    file_path = os.path.join(settings.TEMP_DIR, safe_filename)
+
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Fichier vidéo non trouvé")
+
+    return FileResponse(path=file_path, filename=safe_filename, media_type="video/mp4")
 
 
 @router.get("/download-srt/{filename}")
 async def download_srt(filename: str):
     """Endpoint pour télécharger le fichier SRT"""
-    # Sécurité: nettoyer le nom de fichier
     safe_filename = sanitize_filename(filename)
     file_path = os.path.join(settings.TEMP_DIR, safe_filename)
 
     if not os.path.exists(file_path):
-        raise HTTPException(status_code=404, detail="Fichier non trouvé")
+        raise HTTPException(status_code=404, detail="Fichier SRT non trouvé")
 
     return FileResponse(path=file_path, filename=safe_filename, media_type="text/plain")
 
@@ -104,4 +122,10 @@ async def health_check():
         "status": "healthy",
         "service": "Video Subtitle Translator",
         "version": "1.0.0",
+        "features": [
+            "audio_extraction",
+            "transcription",
+            "translation",
+            "subtitle_integration",
+        ],
     }

@@ -150,17 +150,17 @@ class VideoSubtitleApp {
             this.updateStatus("translateStatus", "active");
 
             await this.delay(2000);
-            this.updateProgress(95, "Génération des sous-titres...");
-            this.updateStatus("translateStatus", "completed");
-            this.updateStatus("generateStatus", "active");
+            this.updateProgress(95, "Intégration à la vidéo...");
+            this.updateStatus("generateStatus", "completed");
+            this.updateStatus("combineStatus", "active");
 
             const result = await response.json();
 
-            await this.delay(1000);
+            await this.delay(2000);
             this.updateProgress(100, "Traitement terminé!");
-            this.updateStatus("generateStatus", "completed");
+            this.updateStatus("combineStatus", "completed");
 
-            this.showResults(result);
+            await this.showResults(result);
         } catch (error) {
             throw new Error(
                 `Erreur de communication avec le serveur: ${error.message}`
@@ -188,20 +188,29 @@ class VideoSubtitleApp {
         }
     }
 
-    showResults(result) {
+    async showResults(result) {
         const resultsSection = document.getElementById("resultsSection");
-        const downloadBtn = document.getElementById("downloadBtn");
+        const downloadVideoBtn = document.getElementById("downloadVideoBtn");
+        const downloadSrtBtn = document.getElementById("downloadSrtBtn");
 
-        // Configuration du bouton de téléchargement
-        const filename = result.srt_file_path.split("/").pop();
-        downloadBtn.href = `${this.apiUrl}/download-srt/${filename}`;
-        downloadBtn.download = "subtitles.srt";
+        // Configuration des boutons de téléchargement
+        const videoFilename =
+            result.video_with_subtitles?.split("/").pop() ||
+            "video_with_subtitles.mp4";
+        const srtFilename =
+            result.srt_file_path?.split("/").pop() || "subtitles.srt";
+
+        downloadVideoBtn.href = `${this.apiUrl}/download-video/${videoFilename}`;
+        downloadVideoBtn.download = videoFilename;
+
+        downloadSrtBtn.href = `${this.apiUrl}/download-srt/${srtFilename}`;
+        downloadSrtBtn.download = "subtitles.srt";
 
         // Affichage des informations
         const segmentCount = result.segments_count || "N/A";
         resultsSection.querySelector("p").innerHTML = `
-                    Vos sous-titres ont été générés avec succès.<br>
-                    <strong>${segmentCount}</strong> segments traduits.
+                    Votre vidéo avec sous-titres a été générée avec succès.<br>
+                    <strong>${segmentCount}</strong> segments traduits et intégrés.
                 `;
 
         resultsSection.style.display = "block";
