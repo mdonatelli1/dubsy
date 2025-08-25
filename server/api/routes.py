@@ -28,8 +28,8 @@ video_processor = VideoProcessor()
 @router.post("/upload-and-translate")
 async def upload_and_translate(
     file: UploadFile = File(...),
-    source_lang: str = Form(settings.DEFAULT_SOURCE_LANG),
-    target_lang: str = Form(settings.DEFAULT_TARGET_LANG),
+    source_lang: str = Form(...),
+    target_lang: str = Form(...),
     subtitle_type: str = Form("hard"),  # "hard" ou "soft"
     job_id: str = Form(None),
 ):

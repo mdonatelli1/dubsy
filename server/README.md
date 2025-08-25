@@ -23,8 +23,6 @@ Les variables sont lues via `config/settings.py` (dotenv supporté).
 -   `ALLOWED_EXTENSIONS` (`.mp4,.avi,.mov,.mkv`)
 -   `WHISPER_MODEL` (`whisper-1`)
 -   `TRANSLATION_MODEL` (`gpt-3.5-turbo`)
--   `DEFAULT_SOURCE_LANG` (`en`)
--   `DEFAULT_TARGET_LANG` (`fr`)
 
 Au démarrage, la config est validée. En l’absence de `OPENAI_API_KEY` ou si `TEMP_DIR` est invalide, l’application échoue explicitement.
 
