@@ -25,6 +25,7 @@ class VideoProcessor:
         source_lang: str = "en",
         target_lang: str = "fr",
         subtitle_type: str = "hard",  # "hard" ou "soft"
+        job_id: str | None = None,
     ) -> Dict[str, any]:
         """Pipeline complet de traitement vidéo avec intégration"""
         audio_path = None
@@ -35,11 +36,23 @@ class VideoProcessor:
 
             # 1. Extraction audio
             print("🎵 Extraction de l'audio...")
+            if job_id:
+                from utils.progress_manager import progress_manager
+
+                await progress_manager.send(
+                    job_id, "progress", {"step": "audio_extraction", "percent": 20}
+                )
             audio_path = self.audio_service.extract_audio_from_video(video_path)
             print(f"✅ Audio extrait: {audio_path}")
 
             # 2. Transcription
             print("🎤 Transcription avec Whisper...")
+            if job_id:
+                from utils.progress_manager import progress_manager
+
+                await progress_manager.send(
+                    job_id, "progress", {"step": "transcription", "percent": 40}
+                )
             transcript = self.transcription_service.transcribe_audio(
                 audio_path, source_lang
             )
@@ -47,6 +60,12 @@ class VideoProcessor:
 
             # 3. Traduction
             print("🔤 Traduction des segments...")
+            if job_id:
+                from utils.progress_manager import progress_manager
+
+                await progress_manager.send(
+                    job_id, "progress", {"step": "translation", "percent": 60}
+                )
             translated_segments = await self.translation_service.translate_segments(
                 transcript["segments"], target_lang
             )
@@ -54,6 +73,12 @@ class VideoProcessor:
 
             # 4. Génération SRT
             print("📝 Génération du fichier SRT...")
+            if job_id:
+                from utils.progress_manager import progress_manager
+
+                await progress_manager.send(
+                    job_id, "progress", {"step": "srt_generation", "percent": 80}
+                )
             srt_path = self.subtitle_service.create_srt_file(translated_segments)
             print(f"✅ SRT généré: {srt_path}")
 
@@ -69,6 +94,12 @@ class VideoProcessor:
                 )
 
             print(f"✅ Vidéo finale créée: {video_output_path}")
+            if job_id:
+                from utils.progress_manager import progress_manager
+
+                await progress_manager.send(
+                    job_id, "progress", {"step": "combination", "percent": 100}
+                )
 
             return {
                 "srt_file": srt_path,

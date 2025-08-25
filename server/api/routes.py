@@ -2,10 +2,19 @@ import os
 import uuid
 
 from config.settings import settings
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import (
+    APIRouter,
+    File,
+    Form,
+    HTTPException,
+    UploadFile,
+    WebSocket,
+    WebSocketDisconnect,
+)
 from fastapi.responses import FileResponse
 from services.video_processor import VideoProcessor
 from utils.exceptions import FileValidationError, VideoProcessingError
+from utils.progress_manager import progress_manager
 from utils.validators import (
     sanitize_filename,
     validate_language_code,
@@ -22,6 +31,7 @@ async def upload_and_translate(
     source_lang: str = Form(settings.DEFAULT_SOURCE_LANG),
     target_lang: str = Form(settings.DEFAULT_TARGET_LANG),
     subtitle_type: str = Form("hard"),  # "hard" ou "soft"
+    job_id: str = Form(None),
 ):
     """Endpoint pour uploader une vidéo et générer une vidéo avec sous-titres"""
 
@@ -65,11 +75,15 @@ async def upload_and_translate(
             buffer.write(content)
 
         # Traiter la vidéo (pipeline complet)
+        # notifier le démarrage
+        if job_id:
+            await progress_manager.send(job_id, "started", {"filename": safe_filename})
+
         result = await video_processor.process_video(
-            temp_video_path, source_lang, target_lang, subtitle_type
+            temp_video_path, source_lang, target_lang, subtitle_type, job_id=job_id
         )
 
-        return {
+        response = {
             "message": "Traduction et intégration terminées avec succès",
             "srt_file_path": result["srt_file"],
             "video_with_subtitles": result["video_with_subtitles"],
@@ -77,6 +91,9 @@ async def upload_and_translate(
             "subtitle_type": result["subtitle_type"],
             "status": result["status"],
         }
+        if job_id:
+            await progress_manager.send(job_id, "completed", response)
+        return response
 
     except FileValidationError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -89,6 +106,17 @@ async def upload_and_translate(
         # Nettoyage du fichier d'entrée
         if temp_video_path and os.path.exists(temp_video_path):
             video_processor.cleanup_temp_file(temp_video_path)
+
+
+@router.websocket("/ws/{job_id}")
+async def ws_progress(websocket: WebSocket, job_id: str):
+    await progress_manager.connect(job_id, websocket)
+    try:
+        while True:
+            # keep the connection open; we don't expect messages from client
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        progress_manager.disconnect(job_id, websocket)
 
 
 @router.get("/download-video/{filename}")

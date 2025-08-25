@@ -2,6 +2,8 @@ class VideoSubtitleApp {
     constructor() {
         this.apiUrl = "http://localhost:8000"; // URL de votre backend
         this.selectedFile = null;
+        this.jobId = null;
+        this.ws = null;
         this.initializeEventListeners();
     }
 
@@ -93,6 +95,9 @@ class VideoSubtitleApp {
         document.getElementById("errorSection").style.display = "none";
 
         try {
+            // créer un job_id et ouvrir le WS
+            this.jobId = crypto.randomUUID();
+            this.openWebSocket(this.jobId);
             await this.uploadAndTranslate();
         } catch (error) {
             this.showError(
@@ -114,13 +119,7 @@ class VideoSubtitleApp {
             "target_lang",
             document.getElementById("targetLang").value
         );
-
-        // Simulation du progrès
-        this.updateProgress(0, "Préparation du fichier...");
-        this.updateStatus("uploadStatus", "active");
-
-        await this.delay(1000);
-        this.updateProgress(20, "Upload en cours...");
+        if (this.jobId) formData.append("job_id", this.jobId);
 
         try {
             const response = await fetch(
@@ -135,30 +134,7 @@ class VideoSubtitleApp {
                 throw new Error(`Erreur serveur: ${response.status}`);
             }
 
-            this.updateProgress(40, "Extraction de l'audio...");
-            this.updateStatus("uploadStatus", "completed");
-            this.updateStatus("extractStatus", "active");
-
-            await this.delay(2000);
-            this.updateProgress(60, "Transcription avec Whisper...");
-            this.updateStatus("extractStatus", "completed");
-            this.updateStatus("transcribeStatus", "active");
-
-            await this.delay(3000);
-            this.updateProgress(80, "Traduction des segments...");
-            this.updateStatus("transcribeStatus", "completed");
-            this.updateStatus("translateStatus", "active");
-
-            await this.delay(2000);
-            this.updateProgress(95, "Intégration à la vidéo...");
-            this.updateStatus("generateStatus", "completed");
-            this.updateStatus("combineStatus", "active");
-
             const result = await response.json();
-
-            await this.delay(2000);
-            this.updateProgress(100, "Traitement terminé!");
-            this.updateStatus("combineStatus", "completed");
 
             await this.showResults(result);
         } catch (error) {
@@ -166,6 +142,72 @@ class VideoSubtitleApp {
                 `Erreur de communication avec le serveur: ${error.message}`
             );
         }
+    }
+
+    openWebSocket(jobId) {
+        const wsUrl = this.apiUrl.replace("http", "ws") + `/ws/${jobId}`;
+        this.ws = new WebSocket(wsUrl);
+        this.ws.onopen = () => {
+            this.updateProgress(0, "Connexion temps réel établie...");
+            this.updateStatus("uploadStatus", "active");
+        };
+        this.ws.onmessage = (event) => {
+            try {
+                const msg = JSON.parse(event.data);
+                if (msg.type === "started") {
+                    this.updateProgress(10, "Upload en cours...");
+                } else if (msg.type === "progress") {
+                    const { step, percent } = msg.data || {};
+                    const stepToText = {
+                        audio_extraction: "Extraction de l'audio...",
+                        transcription: "Transcription avec Whisper...",
+                        translation: "Traduction des segments...",
+                        srt_generation: "Génération des sous-titres...",
+                        combination: "Intégration à la vidéo...",
+                    };
+                    if (typeof percent === "number") {
+                        this.updateProgress(
+                            percent,
+                            stepToText[step] || "En cours..."
+                        );
+                    }
+
+                    // bascule d'états visuels
+                    if (step === "audio_extraction") {
+                        this.updateStatus("uploadStatus", "completed");
+                        this.updateStatus("extractStatus", "active");
+                    }
+                    if (step === "transcription") {
+                        this.updateStatus("extractStatus", "completed");
+                        this.updateStatus("transcribeStatus", "active");
+                    }
+                    if (step === "translation") {
+                        this.updateStatus("transcribeStatus", "completed");
+                        this.updateStatus("translateStatus", "active");
+                    }
+                    if (step === "srt_generation") {
+                        this.updateStatus("generateStatus", "active");
+                    }
+                    if (step === "combination") {
+                        this.updateStatus("generateStatus", "completed");
+                        this.updateStatus("combineStatus", "active");
+                    }
+                } else if (msg.type === "completed") {
+                    this.updateProgress(100, "Traitement terminé!");
+                    this.updateStatus("combineStatus", "completed");
+                    // close after completion
+                    this.ws && this.ws.close();
+                }
+            } catch (e) {
+                // ignore malformed messages
+            }
+        };
+        this.ws.onclose = () => {
+            // no-op
+        };
+        this.ws.onerror = () => {
+            // fallback UI could be added here
+        };
     }
 
     updateProgress(percent, text) {
